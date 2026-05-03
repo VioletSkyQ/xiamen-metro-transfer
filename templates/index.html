@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>厦门地铁换乘查询</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header>
+  <h1>厦门地铁换乘查询系统</h1>
+  <p class="subtitle">Xiamen Metro Transfer System</p>
+</header>
+
+<div class="container">
+
+  <!-- 查询面板 -->
+  <div class="panel query-panel">
+    <div class="form-row">
+      <div class="form-group">
+        <label>起始站</label>
+        <select id="start-station">
+          <option value="">请选择起始站</option>
+        </select>
+      </div>
+      <div class="swap-btn" id="swap-btn" title="交换起终点">⇄</div>
+      <div class="form-group">
+        <label>终点站</label>
+        <select id="end-station">
+          <option value="">请选择终点站</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-all">一键查询</button>
+      <button class="btn" id="btn-shortest">最短路径</button>
+      <button class="btn" id="btn-transfers">最少换乘</button>
+      <button class="btn" id="btn-compare">多方案对比</button>
+    </div>
+    <div id="error-msg" class="error-msg hidden"></div>
+  </div>
+
+  <!-- 结果面板 -->
+  <div class="panel result-panel hidden" id="result-panel">
+    <h3>查询结果</h3>
+    <div id="result-content"></div>
+  </div>
+
+  <!-- 线路图 -->
+  <div class="panel map-panel">
+    <h3>厦门地铁线路图</h3>
+    <div class="map-toolbar">
+      <div class="search-box">
+        <input type="text" id="station-search" placeholder="🔍 搜索站点..." autocomplete="off">
+        <button class="search-clear hidden" id="search-clear" title="清除搜索">✕</button>
+        <div class="search-dropdown hidden" id="search-dropdown"></div>
+      </div>
+    </div>
+    <p class="map-hint">💡 点击地图上的站点圆圈选择起终点，再次点击已选站点可取消 | 可滚轮缩放、拖拽平移</p>
+    <div id="map-container"></div>
+  </div>
+
+</div>
+
+<footer>
+  <p>数据来源：厦门地铁官网 | 仅供参考，请以实际运营信息为准</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/map-renderer.js"></script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
