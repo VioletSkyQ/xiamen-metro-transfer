@@ -21,14 +21,12 @@ class MetroMap {
     const resp = await fetch("/api/map-data");
     const data = await resp.json();
     
-    // ==== 🔥 翻译官：把 Python 传来的地球坐标，翻译成火星坐标 ====
+    // ==== 🔥 核心修改：炒掉翻译官！直接使用后端的火星坐标 ====
     this.coords = {};
     for (const [st, coord] of Object.entries(data.coords)) {
       if (coord) {
-        const lat = coord[0];
-        const lng = coord[1];
-        const marsCoords = gcoord.transform([lng, lat], gcoord.WGS84, gcoord.GCJ02);
-        this.coords[st] = [marsCoords[1], marsCoords[0]];
+        // 直接赋值，不再经过 gcoord 转换！
+        this.coords[st] = [coord[0], coord[1]]; 
       }
     }
     // ==============================================================
