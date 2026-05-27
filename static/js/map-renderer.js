@@ -20,7 +20,19 @@ class MetroMap {
   async load() {
     const resp = await fetch("/api/map-data");
     const data = await resp.json();
-    this.coords = data.coords;
+    
+    // ==== 🔥 翻译官：把 Python 传来的地球坐标，翻译成火星坐标 ====
+    this.coords = {};
+    for (const [st, coord] of Object.entries(data.coords)) {
+      if (coord) {
+        const lat = coord[0];
+        const lng = coord[1];
+        const marsCoords = gcoord.transform([lng, lat], gcoord.WGS84, gcoord.GCJ02);
+        this.coords[st] = [marsCoords[1], marsCoords[0]];
+      }
+    }
+    // ==============================================================
+
     this.lineRoutes = data.routes;
     this.lineColors = data.colors;
 
@@ -43,10 +55,9 @@ class MetroMap {
       attributionControl: true,
     });
 
-    // OpenStreetMap 瓦片
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    // ==== 🔥 高德中文实景地图底图 ====
+    L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
+      attribution: "数据来源：高德地图",
       maxZoom: 19,
     }).addTo(this.map);
 
@@ -56,10 +67,7 @@ class MetroMap {
 
   _drawLines() {
     for (const [lineName, stations] of Object.entries(this.lineRoutes)) {
-      const latlngs = stations
-        .map((s) => this.coords[s])
-        .filter((c) => c);
-
+      const latlngs = stations.map((s) => this.coords[s]).filter((c) => c);
       if (latlngs.length < 2) continue;
 
       const polyline = L.polyline(latlngs, {
@@ -76,7 +84,6 @@ class MetroMap {
         direction: "center",
         className: "line-tooltip",
       });
-
       this.linePolylines[lineName] = polyline;
     }
   }
@@ -98,11 +105,8 @@ class MetroMap {
     for (const [st, coord] of Object.entries(this.coords)) {
       const lines = stationLines[st] || [];
       const isTransfer = lines.length >= 2;
-      const primaryColor = isTransfer
-        ? "#333"
-        : this.lineColors[lines[0]] || "#999";
+      const primaryColor = isTransfer ? "#333" : this.lineColors[lines[0]] || "#999";
 
-      // 站点圆点
       const isMobile = window.innerWidth < 768;
       const marker = L.circleMarker(coord, {
         radius: isTransfer ? (isMobile ? 11 : 9) : (isMobile ? 8 : 6),
@@ -114,7 +118,6 @@ class MetroMap {
         className: "station-marker",
       }).addTo(this.map);
 
-      // 常驻站名标签
       marker.bindTooltip(st, {
         permanent: true,
         direction: "bottom",
@@ -124,33 +127,20 @@ class MetroMap {
 
       marker.on("click", () => this._onStationClick(st));
 
-      // 悬停高亮
       marker.on("mouseover", () => {
-        if (
-          st !== this.selectedStart &&
-          st !== this.selectedEnd &&
-          st !== this._searchHighlighted &&
-          !marker._onRoute
-        ) {
+        if (st !== this.selectedStart && st !== this.selectedEnd && st !== this._searchHighlighted && !marker._onRoute) {
           marker.setStyle({ radius: isTransfer ? 11 : 8, fillColor: "#fffbe6" });
         }
         marker.bringToFront();
       });
 
       marker.on("mouseout", () => {
-        if (
-          st !== this.selectedStart &&
-          st !== this.selectedEnd &&
-          st !== this._searchHighlighted &&
-          !marker._onRoute
-        ) {
+        if (st !== this.selectedStart && st !== this.selectedEnd && st !== this._searchHighlighted && !marker._onRoute) {
           marker.setStyle({ radius: isTransfer ? 9 : 6, fillColor: "#fff" });
         }
       });
 
-      if (isTransfer) {
-        this.transferMarkers[st] = marker;
-      }
+      if (isTransfer) this.transferMarkers[st] = marker;
       this.stationMarkers[st] = marker;
     }
   }
@@ -192,19 +182,13 @@ class MetroMap {
     const endEl = document.getElementById("end-station");
     this.selectedStart = (startEl && startEl.value) || null;
     this.selectedEnd = (endEl && endEl.value) || null;
-
     const stationLines = this._getStationLines();
 
     for (const [st, marker] of Object.entries(this.stationMarkers)) {
-      // 保留搜索高亮
       if (st === this._searchHighlighted) continue;
-
       const isTransfer = stationLines[st]?.length >= 2;
-      const primaryColor = isTransfer
-        ? "#333"
-        : this.lineColors[stationLines[st]?.[0]] || "#999";
+      const primaryColor = isTransfer ? "#333" : this.lineColors[stationLines[st]?.[0]] || "#999";
 
-      // 重置样式
       marker.setStyle({
         radius: isTransfer ? 9 : 6,
         fillColor: "#fff",
@@ -216,32 +200,17 @@ class MetroMap {
       marker._onRoute = false;
     }
 
-    // 起点
     if (this.selectedStart) {
       const m = this.stationMarkers[this.selectedStart];
       if (m) {
-        m.setStyle({
-          radius: 11,
-          fillColor: "#4caf50",
-          fillOpacity: 1,
-          color: "#2e7d32",
-          weight: 3.5,
-        });
+        m.setStyle({ radius: 11, fillColor: "#4caf50", fillOpacity: 1, color: "#2e7d32", weight: 3.5 });
         m.bringToFront();
       }
     }
-
-    // 终点
     if (this.selectedEnd) {
       const m = this.stationMarkers[this.selectedEnd];
       if (m) {
-        m.setStyle({
-          radius: 11,
-          fillColor: "#f44336",
-          fillOpacity: 1,
-          color: "#c62828",
-          weight: 3.5,
-        });
+        m.setStyle({ radius: 11, fillColor: "#f44336", fillOpacity: 1, color: "#c62828", weight: 3.5 });
         m.bringToFront();
       }
     }
@@ -249,21 +218,11 @@ class MetroMap {
 
   setHighlight(path) {
     this.highlightGroup.clearLayers();
-
     if (!path || path.length === 0) return;
 
     const latlngs = path.map((s) => this.coords[s]).filter((c) => c);
+    L.polyline(latlngs, { color: "#00c853", weight: 7, opacity: 0.8, lineCap: "round", lineJoin: "round" }).addTo(this.highlightGroup);
 
-    // 高亮路径线
-    L.polyline(latlngs, {
-      color: "#00c853",
-      weight: 7,
-      opacity: 0.8,
-      lineCap: "round",
-      lineJoin: "round",
-    }).addTo(this.highlightGroup);
-
-    // 路径站点高亮
     const stationLines = this._getStationLines();
     for (const st of path) {
       const marker = this.stationMarkers[st];
@@ -279,14 +238,8 @@ class MetroMap {
         marker.bringToFront();
       }
     }
-
-    // 起终点保持在最前
-    if (this.selectedStart) {
-      this.stationMarkers[this.selectedStart]?.bringToFront();
-    }
-    if (this.selectedEnd) {
-      this.stationMarkers[this.selectedEnd]?.bringToFront();
-    }
+    if (this.selectedStart) this.stationMarkers[this.selectedStart]?.bringToFront();
+    if (this.selectedEnd) this.stationMarkers[this.selectedEnd]?.bringToFront();
   }
 
   clearHighlight() {
@@ -299,29 +252,17 @@ class MetroMap {
 
   searchAndHighlight(stationName) {
     this._clearSearchHighlight();
-
     const marker = this.stationMarkers[stationName];
     if (!marker) return;
-
     const coord = this.coords[stationName];
     if (!coord) return;
 
-    // 飞行到站点并放大
     this.map.flyTo(coord, 15, { duration: 0.8 });
-
-    // 搜索高亮样式 — 金色脉冲
     const stationLines = this._getStationLines();
     const isTransfer = (stationLines[stationName] || []).length >= 2;
 
-    marker.setStyle({
-      radius: isTransfer ? 14 : 11,
-      fillColor: "#ffc107",
-      fillOpacity: 1,
-      color: "#e6a800",
-      weight: 4,
-    });
+    marker.setStyle({ radius: isTransfer ? 14 : 11, fillColor: "#ffc107", fillOpacity: 1, color: "#e6a800", weight: 4 });
     marker.bringToFront();
-
     this._searchHighlighted = stationName;
     this._searchPulse = { growing: true, baseRadius: isTransfer ? 14 : 11 };
     this._searchPulseTimer = setInterval(() => {
@@ -344,7 +285,6 @@ class MetroMap {
 
   _addLegend() {
     const legend = L.control({ position: "bottomright" });
-
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "map-legend");
       div.innerHTML = `
@@ -359,7 +299,6 @@ class MetroMap {
       `;
       return div;
     };
-
     legend.addTo(this.map);
   }
 }
