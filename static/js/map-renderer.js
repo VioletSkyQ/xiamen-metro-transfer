@@ -21,12 +21,13 @@ class MetroMap {
     const resp = await fetch("/api/map-data");
     const data = await resp.json();
     
-    // ==== 🔥 核心修改：炒掉翻译官！直接使用后端的火星坐标 ====
+  // ==== 🔥 接收高德标准的 [经度, 纬度] 数据 ====
     this.coords = {};
     for (const [st, coord] of Object.entries(data.coords)) {
       if (coord) {
-        // 直接赋值，不再经过 gcoord 转换！
-        this.coords[st] = [coord[0], coord[1]]; 
+        // 关键修改：把 0 和 1 对调！
+        // 因为 Leaflet 画图死磕 [纬度, 经度] 格式
+        this.coords[st] = [coord[1], coord[0]]; 
       }
     }
     // ==============================================================
