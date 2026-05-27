@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
           source: "."
-          target: "/root/xiamen"
+          target: "/root/xiamen-metro"
 
       # 3. 机器人自动登录服务器，执行 Docker 重启命令
       - name: ⚙️ 执行 Docker 构建与发布
