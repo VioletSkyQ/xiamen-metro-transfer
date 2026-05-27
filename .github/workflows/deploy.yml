@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
           script: |
-            cd /root/xiamen
+            cd /root/xiamen-metro
             echo "开始构建最新镜像..."
             docker build -t xiamen-app:latest .
             echo "清理旧容器..."
