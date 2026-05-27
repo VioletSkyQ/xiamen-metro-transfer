@@ -1,0 +1,44 @@
+name: 厦门换乘系统自动部署
+
+# 触发条件：只要有人往 main 分支推送代码，流水线就启动
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # 给机器人分配一台临时的 Linux 小电脑
+
+    steps:
+      # 1. 机器人把你最新的代码拉取到临时电脑上
+      - name: 📥 获取最新代码
+        uses: actions/checkout@v3
+
+      # 2. 机器人把最新代码自动传到你的阿里云服务器上（替换原来的手工拖拽）
+      - name: 🚀 传输代码到阿里云
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          source: "."
+          target: "/root/xiamen"
+
+      # 3. 机器人自动登录服务器，执行 Docker 重启命令
+      - name: ⚙️ 执行 Docker 构建与发布
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            cd /root/xiamen
+            echo "开始构建最新镜像..."
+            docker build -t xiamen-app:latest .
+            echo "清理旧容器..."
+            docker rm -f $(docker ps -aq) || true
+            echo "启动新系统..."
+            docker run -d -p 80:5000 xiamen-app:latest
+            echo "🎉 部署大功告成！"
