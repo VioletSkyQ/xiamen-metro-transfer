@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>厦门地铁换乘查询</title>
 <link rel="stylesheet" href="/static/css/style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- 👇 换成阿里巴巴 ElemeCDN 极速源 👇 -->
+<link rel="stylesheet" href="https://npm.elemecdn.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://npm.elemecdn.com/gcoord@0.3.2/dist/gcoord.js"></script>
 </head>
 <body>
 
@@ -15,7 +17,6 @@
 </header>
 
 <div class="container">
-
   <!-- 查询面板 -->
   <div class="panel query-panel">
     <div class="form-row">
@@ -61,14 +62,14 @@
     <p class="map-hint">💡 点击地图上的站点圆圈选择起终点，再次点击已选站点可取消 | 可滚轮缩放、拖拽平移</p>
     <div id="map-container"></div>
   </div>
-
 </div>
 
 <footer>
   <p>数据来源：厦门地铁官网 | 仅供参考，请以实际运营信息为准</p>
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- 👇 同样换成阿里的引擎源 👇 -->
+<script src="https://npm.elemecdn.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/static/js/map-renderer.js"></script>
 <script src="/static/js/main.js"></script>
 </body>

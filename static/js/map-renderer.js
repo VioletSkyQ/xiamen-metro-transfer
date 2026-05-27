@@ -20,7 +20,21 @@ class MetroMap {
   async load() {
     const resp = await fetch("/api/map-data");
     const data = await resp.json();
-    this.coords = data.coords;
+    
+    // ==== 🔥 核心修改：在接收数据后，立刻把地球坐标翻译成火星坐标 ====
+    this.coords = {};
+    for (const [st, coord] of Object.entries(data.coords)) {
+      if (coord) {
+        const lat = coord[0];
+        const lng = coord[1];
+        // gcoord 要求的输入输出格式是 [经度, 纬度]
+        const marsCoords = gcoord.transform([lng, lat], gcoord.WGS84, gcoord.GCJ02);
+        // Leaflet 需要的格式是 [纬度, 经度]
+        this.coords[st] = [marsCoords[1], marsCoords[0]];
+      }
+    }
+    // ==============================================================
+
     this.lineRoutes = data.routes;
     this.lineColors = data.colors;
 
@@ -43,12 +57,12 @@ class MetroMap {
       attributionControl: true,
     });
 
-    // OpenStreetMap 瓦片
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    // ==== 🔥 核心修改：替换为不被屏蔽的、丝滑的高德地图中文底图 ====
+    L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
+      attribution: "数据来源：高德地图",
       maxZoom: 19,
     }).addTo(this.map);
+    // ==============================================================
 
     this.map.fitBounds(bounds.pad(0.08));
     this.highlightGroup = L.layerGroup().addTo(this.map);
@@ -196,7 +210,6 @@ class MetroMap {
     const stationLines = this._getStationLines();
 
     for (const [st, marker] of Object.entries(this.stationMarkers)) {
-      // 保留搜索高亮
       if (st === this._searchHighlighted) continue;
 
       const isTransfer = stationLines[st]?.length >= 2;
@@ -204,7 +217,6 @@ class MetroMap {
         ? "#333"
         : this.lineColors[stationLines[st]?.[0]] || "#999";
 
-      // 重置样式
       marker.setStyle({
         radius: isTransfer ? 9 : 6,
         fillColor: "#fff",
@@ -216,7 +228,6 @@ class MetroMap {
       marker._onRoute = false;
     }
 
-    // 起点
     if (this.selectedStart) {
       const m = this.stationMarkers[this.selectedStart];
       if (m) {
@@ -231,7 +242,6 @@ class MetroMap {
       }
     }
 
-    // 终点
     if (this.selectedEnd) {
       const m = this.stationMarkers[this.selectedEnd];
       if (m) {
@@ -254,7 +264,6 @@ class MetroMap {
 
     const latlngs = path.map((s) => this.coords[s]).filter((c) => c);
 
-    // 高亮路径线
     L.polyline(latlngs, {
       color: "#00c853",
       weight: 7,
@@ -263,7 +272,6 @@ class MetroMap {
       lineJoin: "round",
     }).addTo(this.highlightGroup);
 
-    // 路径站点高亮
     const stationLines = this._getStationLines();
     for (const st of path) {
       const marker = this.stationMarkers[st];
@@ -280,7 +288,6 @@ class MetroMap {
       }
     }
 
-    // 起终点保持在最前
     if (this.selectedStart) {
       this.stationMarkers[this.selectedStart]?.bringToFront();
     }
@@ -306,10 +313,8 @@ class MetroMap {
     const coord = this.coords[stationName];
     if (!coord) return;
 
-    // 飞行到站点并放大
     this.map.flyTo(coord, 15, { duration: 0.8 });
 
-    // 搜索高亮样式 — 金色脉冲
     const stationLines = this._getStationLines();
     const isTransfer = (stationLines[stationName] || []).length >= 2;
 
