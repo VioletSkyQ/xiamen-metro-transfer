@@ -283,6 +283,11 @@ function buildRouteCard(route, idx) {
   const stations = route.stations || [];
   const transfers = route.transfers || [];
 
+  // 👇 新增：获取后端传过来的分钟数，并加上橙色高亮样式
+  const minutesHtml = route.total_minutes 
+    ? `<span style="color: #FF6A00; font-weight: bold; font-size: 16px;">约 ${route.total_minutes} 分钟</span>` 
+    : '';
+
   // 标注换乘站
   const transferSet = new Set(transfers.map((t) => t.station));
   const stationHtml = stations
@@ -302,10 +307,14 @@ function buildRouteCard(route, idx) {
       "</div>";
   }
 
+  // 👇 修改返回的 HTML 结构，使用 flex 布局让“方案名”和“时间”左右对齐
   return `
     <div class="result-item">
-      <h4>${typeLabel}</h4>
-      <div class="result-stats">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4 style="margin: 0;">${typeLabel}</h4>
+        ${minutesHtml}
+      </div>
+      <div class="result-stats" style="margin-bottom: 10px;">
         <span>共 ${route.total_stations} 站</span>
         <span>换乘 ${route.total_transfers} 次</span>
       </div>

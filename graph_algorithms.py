@@ -153,16 +153,7 @@ def _route_sig(route):
 
 
 def format_route(route):
-    """将内部路径转为可读结果。
-
-    返回 {
-        "stations": [站名列表],
-        "transfers": [{"station": 站名, "from": 线路, "to": 线路}],
-        "total_stations": int,
-        "total_transfers": int,
-        "description": str,
-    }
-    """
+   """将内部路径转为可读结果，并计算真实总耗时"""
     if not route:
         return None
 
@@ -171,6 +162,7 @@ def format_route(route):
     prev_line = route[0][1]
     station_count = 0
 
+    # 1. 梳理站名和换乘节点
     for i, (st, ln) in enumerate(route):
         if i == 0:
             station_list.append(st)
@@ -190,6 +182,25 @@ def format_route(route):
     if total_stations == 0:
         total_stations = 1
 
+    # 2. 计算真实总耗时 (你独有的高德真数据引擎！)
+    total_minutes = 0.0
+    for i in range(len(route) - 1):
+        cur_node = route[i]
+        next_node = route[i+1]
+        
+        # 从你更新过的邻接表里，找出这两个站之间的真实分钟数
+        for nbr_st, nbr_line, weight, _ in ADJ.get(cur_node, []):
+            if (nbr_st, nbr_line) == next_node:
+                total_minutes += weight
+                break
+                
+    # 加上进站安检、买票、等首趟车的 4 分钟
+    total_minutes += 4.0 
+    
+    # 格式化一下，只保留一位小数
+    formatted_minutes = round(total_minutes, 1)
+
+    # 3. 拼接描述文本
     desc = " -> ".join(station_list)
     if transfer_list:
         desc += f" (换乘{len(transfer_list)}次)"
@@ -201,5 +212,6 @@ def format_route(route):
         "transfers": transfer_list,
         "total_stations": total_stations,
         "total_transfers": len(transfer_list),
+        "total_minutes": formatted_minutes, # 👈 把算好的时间正式传给前端！
         "description": desc,
     }
