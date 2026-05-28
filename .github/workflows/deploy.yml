@@ -25,8 +25,8 @@ jobs:
           source: "."
           target: "/root/xiamen-metro"
 
-      # 3. 机器人自动登录服务器，执行 Docker 重启命令（已修复安全隐患）
-      - name: ⚙️ 执行 Docker 构建与发布
+      # 3. 机器人自动登录服务器，执行 Docker Compose 重启命令
+      - name: ⚙️ 执行双容器架构构建与发布
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -35,15 +35,18 @@ jobs:
           port: 22
           script: |
             cd /root/xiamen-metro
-            echo "开始构建最新镜像..."
-            docker build -t xiamen-app:latest .
             
-            echo "清理旧的同名容器（安全模式）..."
-            # 这里的修改最重要：只强制删除名为 xiamen-app-container 的旧容器，不碰别的！
-            docker rm -f xiamen-app-container || true
+            # --- 以下是升级为 Nginx 架构后的新版部署逻辑 ---
             
-            echo "启动新系统..."
-            # 给新跑起来的容器加上固定的名字：xiamen-app-container
-            docker run -d -p 80:5000 --name xiamen-app-container xiamen-app:latest
+            echo "🛑 正在优雅地关闭旧的容器和网络..."
+            # 使用大管家一键关闭并清理之前的环境
+            docker-compose down
             
-            echo "🎉 部署大功告成！"
+            echo "🏗️ 正在基于最新的 docker-compose.yml 重新构建并启动..."
+            # -d 代表后台运行，--build 代表强制用最新代码重新打包
+            docker-compose up -d --build
+            
+            echo "🧹 顺手清理一下用不到的旧垃圾镜像（释放服务器空间）..."
+            docker image prune -f
+            
+            echo "🎉 Nginx + Flask 大厂级架构部署大功告成！"
