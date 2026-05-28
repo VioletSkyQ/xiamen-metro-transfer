@@ -47,7 +47,6 @@ TRANSFERS = {
     "五缘湾":     ["2号线", "3号线"],
 }
 
-# 构建辅助索引
 def build_station_index():
     """返回 {站名: [所属线路列表]}"""
     idx = {}
@@ -58,38 +57,7 @@ def build_station_index():
             idx[st].append(line_name)
     return idx
 
-def build_adjacency():
-    adj = {}
-    for line_name, info in LINES.items():
-        stations = info["stations"]
-        for i, st in enumerate(stations):
-            key = (st, line_name)
-            if key not in adj:
-                adj[key] = []
-            
-            # 向前看一站的真实时间
-            if i > 0:
-                prev_st = stations[i-1]
-                time_cost = get_real_travel_time(st, prev_st)
-                adj[key].append((prev_st, line_name, time_cost, "same"))
-            
-            # 向后看一站的真实时间
-            if i < len(stations) - 1:
-                next_st = stations[i+1]
-                time_cost = get_real_travel_time(st, next_st)
-                adj[key].append((next_st, line_name, time_cost, "same"))
-
-    # 换乘站由于需要爬楼梯、走通道，我们硬编码设定为 5 分钟
-    for st, lines in TRANSFERS.items():
-        for l1 in lines:
-            for l2 in lines:
-                if l1 != l2:
-                    adj[(st, l1)].append((st, l2, 5.0, "transfer"))
-
-    return adj
-
-STATION_INDEX = build_station_index()
-ADJ = build_adjacency()
+# 必须将数据字典置于调用之前
 STATION_TRAVEL_TIMES = {
     ('镇海路', '中山公园'): 4.0,
     ('中山公园', '镇海路'): 4.0,
@@ -228,3 +196,35 @@ STATION_TRAVEL_TIMES = {
     ('后村', '蔡厝'): 9.0,
     ('蔡厝', '后村'): 9.0,
 }
+
+def build_adjacency():
+    adj = {}
+    for line_name, info in LINES.items():
+        stations = info["stations"]
+        for i, st in enumerate(stations):
+            key = (st, line_name)
+            if key not in adj:
+                adj[key] = []
+            
+            # 使用字典读取真实时间
+            if i > 0:
+                prev_st = stations[i-1]
+                time_cost = STATION_TRAVEL_TIMES.get((st, prev_st), 3.0)
+                adj[key].append((prev_st, line_name, time_cost, "same"))
+            
+            if i < len(stations) - 1:
+                next_st = stations[i+1]
+                time_cost = STATION_TRAVEL_TIMES.get((st, next_st), 3.0)
+                adj[key].append((next_st, line_name, time_cost, "same"))
+
+    for st, lines in TRANSFERS.items():
+        for l1 in lines:
+            for l2 in lines:
+                if l1 != l2:
+                    adj[(st, l1)].append((st, l2, 5.0, "transfer"))
+
+    return adj
+
+# 确保最后执行初始化
+STATION_INDEX = build_station_index()
+ADJ = build_adjacency()
