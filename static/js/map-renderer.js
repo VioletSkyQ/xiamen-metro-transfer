@@ -53,6 +53,7 @@ class MetroMap {
       zoomControl: true,
       attributionControl: true,
     });
+    this.map.attributionControl.setPrefix(false);
 
     // ==== 🔥 高德中文实景地图底图 ====
     L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
