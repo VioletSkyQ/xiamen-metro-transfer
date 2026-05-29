@@ -18,7 +18,11 @@ services:
     ports:
       - "80:80"  # Nginx 负责守住服务器对外的 80 大门
     volumes:
-      # 把我们刚才写的接待指南，挂载到 Nginx 肚子里替换默认配置
+      # 把配置文件给 Nginx
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      # 把 HTML 文件夹挂载到 Nginx 的肚子里
+      - ./templates:/usr/share/nginx/html/templates
+      # 把 CSS/JS 文件夹也挂载到 Nginx 的肚子里
+      - ./static:/usr/share/nginx/html/static
     depends_on:
       - app      # 告诉 Nginx：等 Python 老大哥先启动，你再启动
